@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#0f172a" />
+  <title>Pavement Café Plan Builder</title>
+
+  <!-- Add your PWA links and script here -->
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js');
+      });
+    }
+  </script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background: #f1f5f9;
+      color: #1e293b;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    @media (min-width: 1024px) {
+      body {
+        flex-direction: row;
+      }
+    }
+
+    aside {
+      width: 100%;
+      background: #fff;
+      border-bottom: 1px solid #cbd5e1;
+      display: flex;
+      flex-direction: column;
+      height: 48%;
+      overflow-y: auto;
+      z-index: 10;
+    }
+
+    @media (min-width: 1024px) {
+      aside {
+        width: 370px;
+        height: 100%;
+        border-bottom: none;
+        border-right: 1px solid #cbd5e1;
+      }
+    }
+
+    .header {
+      padding: 14px 16px;
+      background: #0f172a;
+      color: #fff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header h1 {
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .header p {
+      font-size: 11px;
+      color: #cbd5e1;
+      margin-top: 2px;
+    }
+
+    .btn-export-sm {
+      background: #059669;
+      color: #fff;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 5px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    @media (min-width: 1024px) {
+      .btn-export-sm {
+        display: none;
+      }
+    }
+
+    .controls-body {
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      flex: 1;
+    }
+
+    .section {
+      border-top: 1px solid #e2e8f0;
+      padding-top: 12px;
+    }
+
+    .section:first-child {
+      border-top: none;
+      padding-top: 0;
+    }
+
+    .section-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #64748b;
+      margin-bottom: 8px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .col-span-2 {
+      grid-column: span 2;
+    }
+
+    label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      color: #475569;
+      margin-bottom: 3px;
+    }
+
+    input[type="text"],
+    input[type="number"] {
+      width: 100%;
+      padding: 6px 8px;
+      font-size: 13px;
+      border: 1px solid #cbd5e1;
+      border-radius: 5px;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #2563eb;
+    }
+
+    .compliance-ok {
+      padding: 10px;
+      border-radius: 6px;
+      background: #ecfdf5;
+      border: 1px solid #6ee7b7;
+      color: #065f46;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .compliance-warn {
+      padding: 10px;
+      border-radius: 6px;
+      background: #fef2f2;
+      border: 1px solid #fca5a5;
+      color: #991b1b;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .btn-item {
+      padding: 8px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 5px;
+      text-align: left;
+      cursor: pointer;
+      color: #1e293b;
+    }
+
+    .btn-item:hover {
+      background: #e2e8f0;
+    }
+
+    .btn-obstacle {
+      background: #fffbeb;
+      border-color: #fcd34d;
+    }
+
+    .btn-obstacle:hover {
+      background: #fef3c7;
+    }
+
+    .photo-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .photo-label {
+      flex: 1;
+      padding: 8px;
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 5px;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: center;
+      cursor: pointer;
+    }
+
+    .btn-hide {
+      padding: 8px 10px;
+      background: #fef2f2;
+      color: #b91c1c;
+      border: 1px solid #fecaca;
+      border-radius: 5px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .sel-bar {
+      margin-top: 10px;
+      padding: 8px 10px;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .sel-bar span {
+      font-size: 12px;
+      font-weight: 700;
+      color: #1e3a8a;
+    }
+
+    .btn-sm {
+      padding: 4px 8px;
+      font-size: 11px;
+      font-weight: 600;
+      border-radius: 4px;
+      cursor: pointer;
+      border: 1px solid #93c5fd;
+      background: #fff;
+      color: #1e40af;
+    }
+
+    .btn-del {
+      background: #dc2626;
+      color: #fff;
+      border-color: #dc2626;
+    }
+
+    .footer {
+      display: none;
+      padding: 14px 16px;
+      border-top: 1px solid #e2e8f0;
+      background: #f8fafc;
+    }
+
+    @media (min-width: 1024px) {
+      .footer {
+        display: block;
+      }
+    }
+
+    .btn-export-lg {
+      width: 100%;
+      padding: 10px 16px;
+      background: #047857;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .btn-export-lg:hover {
+      background: #065f46;
+    }
+
+    main {
+      flex: 1;
+      padding: 12px;
+      overflow: auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #cbd5e1;
+    }
+
+    svg#arch-sheet {
+      width: 100%;
+      height: 100%;
+      max-width: 1250px;
+      background: #fff;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+      border: 1px solid #94a3b8;
+      touch-action: none;
+    }
+
+    svg text {
+      user-select: none;
+      font-family: "Courier New", Courier, monospace;
+    }
+
+    .draggable-item {
+      cursor: grab;
+      touch-action: none;
+    }
+
+    .draggable-item:active {
+      cursor: grabbing;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    @media print {
+      @page {
+        size: A3 landscape;
+        margin: 5mm;
+      }
+
+      body {
+        background: #fff !important;
+        overflow: visible !important;
+        height: auto !important;
+      }
+
+      aside {
+        display: none !important;
+      }
+
+      main {
+        padding: 0 !important;
+        background: #fff !important;
+        width: 100% !important;
+        height: 100vh !important;
+      }
+
+      svg#arch-sheet {
+        width: 100% !important;
+        height: auto !important;
+        max-height: 98vh !important;
+        box-shadow: none !important;
+        border: 1px solid #000 !important;
+      }
+
+      #photoUnderlay {
+        display: none !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <aside>
+    <div class="header">
+      <div>
+        <h1>Pavement Café Plan Builder</h1>
+        <p>1:50 Scale Architectural Site Plan Tool</p>
+      </div>
+      <button onclick="window.print()" class="btn-export-sm">Export PDF</button>
+    </div>
+
+    <div class="controls-body">
+      <div class="section">
+        <div class="section-title">1. Premises Details</div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <div>
+            <label>Business / Premises Name</label>
+            <input id="bizName" type="text" value="The Corner Roast Café" />
+          </div>
+          <div>
+            <label>Premises Address</label>
+            <input id="bizAddress" type="text" value="12 Lisburn Road, Belfast, BT9 6AA" />
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">2. Dimensions (Meters)</div>
+        <div class="grid-2">
+          <div>
+            <label>Shopfront Width (m)</label>
+            <input id="frontageW" type="number" step="0.1" min="2" max="15" value="6.5" />
+          </div>
+          <div>
+            <label>Pavement Depth (m)</label>
+            <input id="pavementD" type="number" step="0.1" min="1.5" max="8" value="4.2" />
+          </div>
+          <div>
+            <label>Café Zone Width (m)</label>
+            <input id="cafeW" type="number" step="0.1" min="1" max="15" value="5.0" />
+          </div>
+          <div>
+            <label>Café Zone Depth (m)</label>
+            <input id="cafeD" type="number" step="0.1" min="0.8" max="6" value="2.0" />
+          </div>
+          <div>
+            <label>Offset from Left (m)</label>
+            <input id="cafeOffset" type="number" step="0.1" min="0" max="10" value="0.7" />
+          </div>
+          <div>
+            <label>Door Position (m)</label>
+            <input id="doorOffset" type="number" step="0.1" min="0.5" max="14" value="1.2" />
+          </div>
+        </div>
+      </div>
+
+      <div id="complianceBox" class="compliance-ok"></div>
+
+      <div class="section">
+        <div class="section-title">3. Site Photo Reference (Optional)</div>
+        <div class="photo-row">
+          <label class="photo-label">
+            Snap / Upload Pavement Photo
+            <input id="photoInput" type="file" accept="image/*" capture="environment" class="hidden" />
+          </label>
+          <button id="clearPhotoBtn" onclick="clearPhoto()" class="btn-hide hidden">Hide</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">4. Tap to Add Furniture &amp; Obstacles</div>
+        <div class="grid-2">
+          <button onclick="addItem('bistro2')" class="btn-item">+ 2-Seat Round (0.7m)</button>
+          <button onclick="addItem('table4')" class="btn-item">+ 4-Seat Square (1.2m)</button>
+          <button onclick="addItem('barrier')" class="btn-item">+ Barrier (1.5m)</button>
+          <button onclick="addItem('planter')" class="btn-item">+ Planter (1.0m)</button>
+          <button onclick="addItem('lamppost')" class="btn-item btn-obstacle">+ Lamppost</button>
+          <button onclick="addItem('tree')" class="btn-item btn-obstacle">+ Tree Pit</button>
+        </div>
+
+        <div id="selectedControls" class="sel-bar hidden">
+          <span>Item Selected</span>
+          <div>
+            <button onclick="rotateSelected()" class="btn-sm">Rotate 45°</button>
+            <button onclick="deleteSelected()" class="btn-sm btn-del">Delete</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <button onclick="window.print()" class="btn-export-lg">Export Council-Ready PDF (A3)</button>
+    </div>
+  </aside>
+
+  <main>
+    <svg id="arch-sheet" viewBox="0 0 1400 990">
+      <defs>
+        <pattern id="wallHatch" width="12" height="12" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">
+          <line x1="0" y1="0" x2="0" y2="12" stroke="#334155" stroke-width="1.5" />
+        </pattern>
+        <pattern id="paveDots" width="20" height="20" patternUnits="userSpaceOnUse">
+          <circle cx="2" cy="2" r="0.6" fill="#cbd5e1" />
+        </pattern>
+      </defs>
+
+      <rect x="20" y="20" width="1360" height="950" fill="none" stroke="#000" stroke-width="2" />
+      <rect x="28" y="28" width="1344" height="934" fill="none" stroke="#000" stroke-width="0.75" />
+
+      <image id="photoUnderlay" x="160" y="180" width="650" height="420" opacity="0.28"
+        preserveAspectRatio="xMidYMid slice" class="hidden" />
+
+      <g id="drawingLayer"></g>
+      <g id="itemsLayer"></g>
+
+      <!-- NORTH ARROW & SCALE BAR -->
+      <g transform="translate(65, 860)">
+        <circle cx="25" cy="25" r="22" fill="none" stroke="#000" stroke-width="1.5" />
+        <polygon points="25,4 18,32 25,26 32,32" fill="#000" />
+        <text x="25" y="62" text-anchor="middle" font-size="12" font-weight="bold">NORTH</text>
+
+        <g transform="translate(80, 15)">
+          <text x="0" y="-6" font-size="11" font-weight="bold">SCALE 1:50 @ A3 (METERS)</text>
+          <rect x="0" y="0" width="100" height="8" fill="#000" stroke="#000" />
+          <rect x="100" y="0" width="100" height="8" fill="#fff" stroke="#000" />
+          <rect x="200" y="0" width="100" height="8" fill="#000" stroke="#000" />
+          <rect x="300" y="0" width="100" height="8" fill="#fff" stroke="#000" />
+          <rect x="400" y="0" width="100" height="8" fill="#000" stroke="#000" />
+          <text x="0" y="22" font-size="11" text-anchor="middle">0</text>
+          <text x="100" y="22" font-size="11" text-anchor="middle">1m</text>
+          <text x="200" y="22" font-size="11" text-anchor="middle">2m</text>
+          <text x="300" y="22" font-size="11" text-anchor="middle">3m</text>
+          <text x="400" y="22" font-size="11" text-anchor="middle">4m</text>
+          <text x="500" y="22" font-size="11" text-anchor="middle">5m</text>
+        </g>
+      </g>
+
+      <!-- KEY / LEGEND -->
+      <g transform="translate(1070, 50)">
+        <rect x="0" y="0" width="290" height="165" fill="#fff" stroke="#000" stroke-width="1" />
+        <text x="12" y="20" font-size="11" font-weight="bold">KEY / LEGEND</text>
+        <rect x="12" y="32" width="26" height="14" fill="url(#wallHatch)" stroke="#000" />
+        <text x="48" y="43" font-size="11">Existing Building Frontage</text>
+        <rect x="12" y="54" width="26" height="14" fill="rgba(220,38,38,0.06)" stroke="#dc2626" stroke-width="2"
+          stroke-dasharray="4,2" />
+        <text x="48" y="65" font-size="11">Proposed Licensed Café Area</text>
+        <line x1="12" y1="84" x2="38" y2="84" stroke="#000" stroke-width="3" />
+        <text x="48" y="88" font-size="11">Kerb Edge / Carriageway</text>
+        <rect x="12" y="100" width="26" height="14" fill="rgba(16,185,129,0.12)" stroke="#10b981" />
+        <text x="48" y="111" font-size="11">Clear Pedestrian Footway</text>
+        <path d="M 12 135 A 18 18 0 0 1 30 135" fill="none" stroke="#2563eb" stroke-dasharray="3,2" />
+        <text x="48" y="134" font-size="11">Entrance / Exit Clearance</text>
+        <text x="12" y="155" font-size="10" fill="#475569">All dimensions in meters (m)</text>
+      </g>
+
+      <!-- ARCHITECTURAL TITLE BLOCK -->
+      <g transform="translate(950, 770)">
+        <rect x="0" y="0" width="422" height="192" fill="#fff" stroke="#000" stroke-width="1.5" />
+        <line x1="0" y1="36" x2="422" y2="36" stroke="#000" />
+        <line x1="0" y1="76" x2="422" y2="76" stroke="#000" />
+        <line x1="0" y1="144" x2="422" y2="144" stroke="#000" />
+        <line x1="210" y1="144" x2="210" y2="192" stroke="#000" />
+
+        <text x="10" y="14" font-size="9" fill="#475569">DRAWING TITLE</text>
+        <text x="10" y="29" font-size="13" font-weight="bold">PROPOSED PAVEMENT CAFÉ SITE PLAN</text>
+
+        <text x="10" y="50" font-size="9" fill="#475569">APPLICANT / PREMISES</text>
+        <text id="tbBizName" x="10" y="64" font-size="11" font-weight="bold">The Corner Roast Café</text>
+        <text id="tbAddress" x="10" y="73" font-size="9.5">12 Lisburn Road, Belfast, BT9 6AA</text>
+
+        <text x="10" y="90" font-size="9" fill="#475569">PROPOSED FURNITURE SCHEDULE</text>
+        <text id="tbScheduleLine1" x="10" y="106" font-size="10.5">• Tables: 0 | Chairs: 0</text>
+        <text id="tbScheduleLine2" x="10" y="122" font-size="10.5">• Removable Barriers: 0 | Planters: 0</text>
+        <text id="tbWalkwaySummary" x="10" y="137" font-size="10" font-weight="bold">• Min. Unobstructed Footway:
+          2.20m</text>
+
+        <text x="10" y="158" font-size="9" fill="#475569">SCALE</text>
+        <text x="10" y="178" font-size="12" font-weight="bold">1:50 @ A3</text>
+
+        <text x="220" y="158" font-size="9" fill="#475569">DATE</text>
+        <text id="tbDate" x="220" y="178" font-size="12" font-weight="bold"></text>
+      </g>
+    </svg>
+  </main>
+
+  <script>
+    const SCALE = 100;
+    const ORIGIN_X = 160;
+    const ORIGIN_Y = 180;
+
+    let items = [
+      { id: 1, type: 'bistro2', x: 340, y: 270, rot: 0 },
+      { id: 2, type: 'bistro2', x: 510, y: 270, rot: 0 },
+      { id: 3, type: 'barrier', x: 330, y: 375, rot: 0 },
+      { id: 4, type: 'barrier', x: 490, y: 375, rot: 0 }
+    ];
+    let selectedId = null;
+    let draggingItem = null;
+    let dragOffset = { x: 0, y: 0 };
+
+    const svg = document.getElementById('arch-sheet');
+    const drawingLayer = document.getElementById('drawingLayer');
+    const itemsLayer = document.getElementById('itemsLayer');
+    const photoUnderlay = document.getElementById('photoUnderlay');
+
+    document.getElementById('tbDate').textContent = new Date().toLocaleDateString('en-GB');
+
+    ['bizName', 'bizAddress', 'frontageW', 'pavementD', 'cafeW', 'cafeD', 'cafeOffset', 'doorOffset'].forEach(id => {
+      document.getElementById(id).addEventListener('input', renderAll);
+    });
+
+    document.getElementById('photoInput').addEventListener('change', (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        photoUnderlay.setAttribute('href', ev.target.result);
+        photoUnderlay.classList.remove('hidden');
+        document.getElementById('clearPhotoBtn').classList.remove('hidden');
+      };
+      reader.readAsDataURL(file);
+    });
+
+    function clearPhoto() {
+      photoUnderlay.classList.add('hidden');
+      document.getElementById('clearPhotoBtn').classList.add('hidden');
+    }
+
+    function drawDimLine(x1, y1, x2, y2, label, offset = -25, vertical = false) {
+      let lx1 = vertical ? x1 + offset : x1;
+      let ly1 = vertical ? y1 : y1 + offset;
+      let lx2 = vertical ? x2 + offset : x2;
+      let ly2 = vertical ? y2 : y2 + offset;
+      const midX = (lx1 + lx2) / 2;
+      const midY = (ly1 + ly2) / 2;
+
+      return `
+        <g stroke="#000" stroke-width="0.9">
+          <line x1="${x1}" y1="${y1}" x2="${lx1}" y2="${ly1}" stroke-dasharray="2,2" stroke="#64748b" />
+          <line x1="${x2}" y1="${y2}" x2="${lx2}" y2="${ly2}" stroke-dasharray="2,2" stroke="#64748b" />
+          <line x1="${lx1}" y1="${ly1}" x2="${lx2}" y2="${ly2}" />
+          <line x1="${lx1 - 5}" y1="${ly1 + 5}" x2="${lx1 + 5}" y2="${ly1 - 5}" stroke-width="1.5" />
+          <line x1="${lx2 - 5}" y1="${ly2 + 5}" x2="${lx2 + 5}" y2="${ly2 - 5}" stroke-width="1.5" />
+        </g>
+        <rect x="${midX - 26}" y="${midY - 9}" width="52" height="16" fill="#fff" />
+        <text x="${midX}" y="${midY + 3}" text-anchor="middle" font-size="11" font-weight="bold">${label}</text>
+      `;
+    }
+
+    function renderAll() {
+      const bizName = document.getElementById('bizName').value || 'Unnamed Premises';
+      const bizAddress = document.getElementById('bizAddress').value || '';
+      const frontageW = parseFloat(document.getElementById('frontageW').value) || 6.0;
+      const pavementD = parseFloat(document.getElementById('pavementD').value) || 4.0;
+      const cafeW = Math.min(parseFloat(document.getElementById('cafeW').value) || 4.0, frontageW);
+      const cafeD = Math.min(parseFloat(document.getElementById('cafeD').value) || 1.8, pavementD);
+      const cafeOffset = Math.min(parseFloat(document.getElementById('cafeOffset').value) || 0, frontageW - cafeW);
+      const doorOffset = Math.min(parseFloat(document.getElementById('doorOffset').value) || 1.0, frontageW - 1.0);
+
+      const clearWalkway = +(pavementD - cafeD).toFixed(2);
+      const isCompliant = clearWalkway >= 2.0;
+
+      document.getElementById('tbBizName').textContent = bizName;
+      document.getElementById('tbAddress').textContent = bizAddress;
+      document.getElementById('tbWalkwaySummary').textContent = `• Min. Unobstructed Footway: ${clearWalkway.toFixed(2)}m ${isCompliant ? '(COMPLIANT)' : '(UNDER 2.0m)'}`;
+
+      const compBox = document.getElementById('complianceBox');
+      if (isCompliant) {
+        compBox.className = 'compliance-ok';
+        compBox.innerHTML = `<strong>Footway Compliant (${clearWalkway.toFixed(2)}m clear)</strong><br/>Meets standard 2.00m unobstructed pedestrian corridor.`;
+      } else {
+        compBox.className = 'compliance-warn';
+        compBox.innerHTML = `<strong>Footway Warning (${clearWalkway.toFixed(2)}m clear)</strong><br/>Minimum <strong>2.00m</strong> clear footpath normally required (1.50m in constrained streets).`;
+      }
+
+      const wPx = frontageW * SCALE;
+      const dPx = pavementD * SCALE;
+      const cWPx = cafeW * SCALE;
+      const cDPx = cafeD * SCALE;
+      const cOffPx = cafeOffset * SCALE;
+      const doorX = ORIGIN_X + doorOffset * SCALE;
+
+      photoUnderlay.setAttribute('width', wPx);
+      photoUnderlay.setAttribute('height', dPx);
+
+      let html = '';
+      html += `<rect x="${ORIGIN_X}" y="${ORIGIN_Y}" width="${wPx}" height="${dPx}" fill="url(#paveDots)" />`;
+
+      const walkColor = isCompliant ? 'rgba(16, 185, 129, 0.07)' : 'rgba(239, 68, 68, 0.14)';
+      html += `<rect x="${ORIGIN_X}" y="${ORIGIN_Y + cDPx}" width="${wPx}" height="${dPx - cDPx}" fill="${walkColor}" />`;
+      html += `<text x="${ORIGIN_X + wPx / 2}" y="${ORIGIN_Y + cDPx + (dPx - cDPx) / 2 + 4}" text-anchor="middle" font-size="12" fill="${isCompliant ? '#065f46' : '#b91c1c'}" font-weight="bold">UNOBSTRUCTED PEDESTRIAN FOOTWAY (${clearWalkway.toFixed(2)}m)</text>`;
+
+      // Building Wall + Entrance Doorway Swing Clearance
+      html += `<rect x="${ORIGIN_X}" y="${ORIGIN_Y - 35}" width="${wPx}" height="35" fill="url(#wallHatch)" stroke="#000" stroke-width="2" />`;
+      html += `<rect x="${doorX}" y="${ORIGIN_Y - 35}" width="100" height="35" fill="#fff" stroke="#000" stroke-width="1.5" />`;
+      html += `<path d="M ${doorX} ${ORIGIN_Y} A 100 100 0 0 0 ${doorX + 100} ${ORIGIN_Y + 100} L ${doorX + 100} ${ORIGIN_Y} Z" fill="rgba(37, 99, 235, 0.06)" stroke="#2563eb" stroke-dasharray="4,3" />`;
+      html += `<text x="${doorX + 50}" y="${ORIGIN_Y - 13}" text-anchor="middle" font-size="10" font-weight="bold">ENTRANCE</text>`;
+
+      // Licensed Cafe Zone
+      html += `<rect x="${ORIGIN_X + cOffPx}" y="${ORIGIN_Y}" width="${cWPx}" height="${cDPx}" fill="rgba(220, 38, 38, 0.04)" stroke="#dc2626" stroke-width="2.5" stroke-dasharray="8,5" />`;
+
+      // Kerb Edge
+      html += `<line x1="${ORIGIN_X - 30}" y1="${ORIGIN_Y + dPx}" x2="${ORIGIN_X + wPx + 30}" y2="${ORIGIN_Y + dPx}" stroke="#000" stroke-width="3" />`;
+      html += `<line x1="${ORIGIN_X - 30}" y1="${ORIGIN_Y + dPx + 6}" x2="${ORIGIN_X + wPx + 30}" y2="${ORIGIN_Y + dPx + 6}" stroke="#64748b" stroke-width="1" />`;
+      html += `<text x="${ORIGIN_X + wPx / 2}" y="${ORIGIN_Y + dPx + 26}" text-anchor="middle" font-size="12" font-weight="bold" fill="#334155">KERB EDGE / PUBLIC CARRIAGEWAY</text>`;
+
+      // Dimension Chains
+      html += drawDimLine(ORIGIN_X, ORIGIN_Y - 35, ORIGIN_X + wPx, ORIGIN_Y - 35, `${frontageW.toFixed(2)}m`, -25, false);
+      html += drawDimLine(ORIGIN_X + cOffPx, ORIGIN_Y, ORIGIN_X + cOffPx + cWPx, ORIGIN_Y, `${cafeW.toFixed(2)}m`, 18, false);
+      html += drawDimLine(ORIGIN_X, ORIGIN_Y, ORIGIN_X, ORIGIN_Y + dPx, `${pavementD.toFixed(2)}m`, -45, true);
+      html += drawDimLine(ORIGIN_X + wPx, ORIGIN_Y, ORIGIN_X + wPx, ORIGIN_Y + cDPx, `${cafeD.toFixed(2)}m`, 35, true);
+      html += drawDimLine(ORIGIN_X + wPx, ORIGIN_Y + cDPx, ORIGIN_X + wPx, ORIGIN_Y + dPx, `${clearWalkway.toFixed(2)}m`, 35, true);
+
+      drawingLayer.innerHTML = html;
+      renderItems();
+    }
+
+    function getItemSVG(item) {
+      const selStroke = item.id === selectedId ? '#2563eb' : '#000';
+      const selWidth = item.id === selectedId ? '2.5' : '1.2';
+
+      switch (item.type) {
+        case 'bistro2':
+          return `
+            <circle cx="0" cy="0" r="35" fill="#fff" stroke="${selStroke}" stroke-width="${selWidth}" />
+            <path d="M -52 -15 L -40 -15 L -40 15 L -52 15 Z" fill="#fff" stroke="${selStroke}" stroke-width="${selWidth}" />
+            <path d="M 40 -15 L 52 -15 L 52 15 L 40 15 Z" fill="#fff" stroke="${selStroke}" stroke-width="${selWidth}" />
+            <text x="0" y="3" text-anchor="middle" font-size="8" fill="#475569">Ø0.7m</text>
+          `;
+        case 'table4':
+          return `
+            <rect x="-45" y="-45" width="90" height="90" fill="#fff" stroke="${selStroke}" stroke-width="${selWidth}" />
+            <rect x="-20" y="-60" width="40" height="11" fill="#fff" stroke="${selStroke}" stroke-width="${selWidth}" />
+            <rect x="-20" y="49" width="40" height="11" fill="#fff" stroke="${selStroke}" stroke-width="${selWidth}" />
+            <rect x="-60" y="-20" width="11" height="40" fill="#fff" stroke="${selStroke}" stroke-width="${selWidth}" />
+            <rect x="49" y="-20" width="11" height="40" fill="#fff" stroke="${selStroke}" stroke-width="${selWidth}" />
+            <text x="0" y="3" text-anchor="middle" font-size="8" fill="#475569">1.2m</text>
+          `;
+        case 'barrier':
+          return `
+            <rect x="-75" y="-5" width="150" height="10" fill="#e2e8f0" stroke="${selStroke}" stroke-width="${selWidth}" />
+            <circle cx="-75" cy="0" r="6" fill="#000" />
+            <circle cx="75" cy="0" r="6" fill="#000" />
+          `;
+        case 'planter':
+          return `
+            <rect x="-50" y="-20" width="100" height="40" fill="#f1f5f9" stroke="${selStroke}" stroke-width="${selWidth}" />
+            <circle cx="-25" cy="0" r="12" fill="none" stroke="#16a34a" stroke-width="1" />
+            <circle cx="0" cy="0" r="14" fill="none" stroke="#16a34a" stroke-width="1" />
+            <circle cx="25" cy="0" r="12" fill="none" stroke="#16a34a" stroke-width="1" />
+          `;
+        case 'lamppost':
+          return `
+            <circle cx="0" cy="0" r="60" fill="rgba(245, 158, 11, 0.12)" stroke="#d97706" stroke-dasharray="3,3" />
+            <circle cx="0" cy="0" r="10" fill="#000" />
+            <text x="0" y="22" text-anchor="middle" font-size="8" font-weight="bold">LAMP</text>
+          `;
+        case 'tree':
+          return `
+            <rect x="-60" y="-60" width="120" height="120" fill="rgba(245, 158, 11, 0.12)" stroke="#d97706" stroke-dasharray="4,3" />
+            <circle cx="0" cy="0" r="16" fill="#78350f" />
+            <text x="0" y="30" text-anchor="middle" font-size="9" font-weight="bold">TREE PIT</text>
+          `;
+      }
+    }
+
+    function renderItems() {
+      let html = '';
+      let tables = 0, chairs = 0, barriers = 0, planters = 0;
+
+      items.forEach(item => {
+        if (item.type === 'bistro2') { tables += 1; chairs += 2; }
+        if (item.type === 'table4') { tables += 1; chairs += 4; }
+        if (item.type === 'barrier') { barriers += 1; }
+        if (item.type === 'planter') { planters += 1; }
+
+        html += `
+          <g class="draggable-item" data-id="${item.id}" transform="translate(${item.x}, ${item.y}) rotate(${item.rot})">
+            ${getItemSVG(item)}
+          </g>
+        `;
+      });
+
+      itemsLayer.innerHTML = html;
+      document.getElementById('tbScheduleLine1').textContent = `• Tables: ${tables}   |   Chairs: ${chairs}`;
+      document.getElementById('tbScheduleLine2').textContent = `• Removable Barriers: ${barriers}   |   Planters: ${planters}`;
+
+      const selBar = document.getElementById('selectedControls');
+      selBar.classList.toggle('hidden', selectedId === null);
+    }
+
+    function addItem(type) {
+      const newItem = { id: Date.now(), type, x: ORIGIN_X + 200, y: ORIGIN_Y + 100, rot: 0 };
+      items.push(newItem);
+      selectedId = newItem.id;
+      renderItems();
+    }
+
+    function rotateSelected() {
+      const item = items.find(i => i.id === selectedId);
+      if (item) { item.rot = (item.rot + 45) % 360; renderItems(); }
+    }
+
+    function deleteSelected() {
+      items = items.filter(i => i.id !== selectedId);
+      selectedId = null;
+      renderItems();
+    }
+
+    function getPointerPosition(evt) {
+      const CTM = svg.getScreenCTM();
+      const clientX = evt.touches && evt.touches[0] ? evt.touches[0].clientX : evt.clientX;
+      const clientY = evt.touches && evt.touches[0] ? evt.touches[0].clientY : evt.clientY;
+      return {
+        x: (clientX - CTM.e) / CTM.a,
+        y: (clientY - CTM.f) / CTM.d
+      };
+    }
+
+    function handleStart(evt) {
+      const target = evt.target.closest('.draggable-item');
+      if (target) {
+        if (evt.cancelable) evt.preventDefault();
+        const id = Number(target.getAttribute('data-id'));
+        selectedId = id;
+        draggingItem = items.find(i => i.id === id);
+        const pos = getPointerPosition(evt);
+        dragOffset.x = pos.x - draggingItem.x;
+        dragOffset.y = pos.y - draggingItem.y;
+        renderItems();
+      } else {
+        selectedId = null;
+        renderItems();
+      }
+    }
+
+    function handleMove(evt) {
+      if (draggingItem) {
+        if (evt.cancelable) evt.preventDefault();
+        const pos = getPointerPosition(evt);
+        draggingItem.x = Math.round((pos.x - dragOffset.x) / 10) * 10;
+        draggingItem.y = Math.round((pos.y - dragOffset.y) / 10) * 10;
+        renderItems();
+      }
+    }
+
+    function handleEnd() { draggingItem = null; }
+
+    svg.addEventListener('mousedown', handleStart);
+    svg.addEventListener('mousemove', handleMove);
+    window.addEventListener('mouseup', handleEnd);
+
+    svg.addEventListener('touchstart', handleStart, { passive: false });
+    svg.addEventListener('touchmove', handleMove, { passive: false });
+    window.addEventListener('touchend', handleEnd);
+
+    renderAll();
+  </script>
+</body>
+
+</html>
